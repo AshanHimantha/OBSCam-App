@@ -5,7 +5,7 @@ import { Modal, StatusBar, StyleSheet, TouchableOpacity, View } from 'react-nati
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
-export default function HomeScreen() {
+export default function CameraScreen() {
   const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
   const [isCameraReady, setCameraReady] = useState(false);
@@ -51,37 +51,39 @@ export default function HomeScreen() {
   return (
     <View style={styles.fullScreenContainer}>
       <StatusBar hidden />
+      
+      {/* CameraView without children */}
       <CameraView
         ref={cameraRef}
         style={styles.fullScreenCamera}
         facing={facing}
         onCameraReady={() => setCameraReady(true)}
-      >
-        
-
-        {showControls && (
-          <View style={styles.floatingControls}>
-            <TouchableOpacity style={styles.iconButton} onPress={toggleCameraFacing}>
-              <ThemedText style={styles.buttonText}>Flip</ThemedText>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.iconButton} onPress={toggleInstructions}>
-              <ThemedText style={styles.buttonText}>Help</ThemedText>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.iconButton} onPress={toggleControls}>
-              <ThemedText style={styles.buttonText}>Hide UI</ThemedText>
-            </TouchableOpacity>
-          </View>
-        )}
-        
-        {!showControls && (
-          <TouchableOpacity 
-            style={styles.fullScreenTouchable} 
-            onPress={toggleControls}
-          />
-        )}
-      </CameraView>
+      />
+      
+      {/* Controls as sibling with absolute positioning */}
+      {showControls && (
+        <View style={styles.floatingControls}>
+          <TouchableOpacity style={styles.iconButton} onPress={toggleCameraFacing}>
+            <ThemedText style={styles.buttonText}>Flip</ThemedText>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.iconButton} onPress={toggleInstructions}>
+            <ThemedText style={styles.buttonText}>Help</ThemedText>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.iconButton} onPress={toggleControls}>
+            <ThemedText style={styles.buttonText}>Hide UI</ThemedText>
+          </TouchableOpacity>
+        </View>
+      )}
+      
+      {/* Touchable overlay to show controls */}
+      {!showControls && (
+        <TouchableOpacity 
+          style={styles.fullScreenTouchable} 
+          onPress={toggleControls}
+        />
+      )}
 
       <Modal
         visible={showInstructions}
@@ -132,6 +134,11 @@ const styles = StyleSheet.create({
   },
   fullScreenCamera: {
     flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   fullScreenTouchable: {
     position: 'absolute',
@@ -139,18 +146,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-  },
-  obsOverlay: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    padding: 8,
-    borderRadius: 4,
-  },
-  obsText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
   },
   floatingControls: {
     position: 'absolute',
@@ -160,6 +155,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 20,
+    zIndex: 10,
   },
   iconButton: {
     backgroundColor: 'rgba(0, 122, 255, 0.7)',
