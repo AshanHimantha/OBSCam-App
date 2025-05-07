@@ -1,6 +1,6 @@
 import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
 import React, { useRef, useState } from 'react';
-import { Modal, StatusBar, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Modal, Platform, StatusBar, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -11,10 +11,18 @@ export default function CameraScreen() {
   const [isCameraReady, setCameraReady] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  
+  // Correct zoom values for Expo Camera (0-1 range)
+  const [zoomIndex, setZoomIndex] = useState(0);
+  const zoomLevels = [0, 0.1, 0.3, 0.5]; 
+  const zoomLabels = ['0.5x', '1x', '2x', '3x'];
+  
   const cameraRef = useRef(null);
 
   const toggleCameraFacing = () => {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
+    // Reset zoom when switching cameras
+    setZoomIndex(0);
   };
 
   const toggleInstructions = () => {
@@ -24,6 +32,20 @@ export default function CameraScreen() {
   const toggleControls = () => {
     setShowControls(!showControls);
   };
+
+  const switchLens = () => {
+    // Only allow lens switching for back camera
+    if (facing === 'front') return;
+    
+    const nextIndex = (zoomIndex + 1) % zoomLevels.length;
+    setZoomIndex(nextIndex);
+  };
+
+  // Get the current zoom level based on the zoom index
+  const getCurrentZoom = () => zoomLevels[zoomIndex];
+  
+  // Get the current zoom label based on the zoom index
+  const getCurrentLabel = () => zoomLabels[zoomIndex];
 
   if (!permission) {
     // Camera permissions are still loading
@@ -52,13 +74,21 @@ export default function CameraScreen() {
     <View style={styles.fullScreenContainer}>
       <StatusBar hidden />
       
-      {/* CameraView without children */}
+      {/* CameraView with proper zoom setting */}
       <CameraView
         ref={cameraRef}
         style={styles.fullScreenCamera}
         facing={facing}
+        zoom={getCurrentZoom()}
         onCameraReady={() => setCameraReady(true)}
       />
+      
+      {/* Lens indicator overlay */}
+      {showControls && facing === 'back' && (
+        <View style={styles.lensIndicator}>
+          <ThemedText style={styles.lensText}>{getCurrentLabel()}</ThemedText>
+        </View>
+      )}
       
       {/* Controls as sibling with absolute positioning */}
       {showControls && (
@@ -66,6 +96,12 @@ export default function CameraScreen() {
           <TouchableOpacity style={styles.iconButton} onPress={toggleCameraFacing}>
             <ThemedText style={styles.buttonText}>Flip</ThemedText>
           </TouchableOpacity>
+          
+          {Platform.OS === 'ios' && facing === 'back' && (
+            <TouchableOpacity style={styles.iconButton} onPress={switchLens}>
+              <ThemedText style={styles.buttonText}>Lens</ThemedText>
+            </TouchableOpacity>
+          )}
           
           <TouchableOpacity style={styles.iconButton} onPress={toggleInstructions}>
             <ThemedText style={styles.buttonText}>Help</ThemedText>
@@ -122,6 +158,20 @@ export default function CameraScreen() {
 }
 
 const styles = StyleSheet.create({
+  lensIndicator: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 8,
+    borderRadius: 4,
+    zIndex: 10,
+  },
+  lensText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
   container: {
     flex: 1,
     padding: 16,
